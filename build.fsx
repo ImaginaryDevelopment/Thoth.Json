@@ -35,7 +35,7 @@ let inline yarnWorkDir (ws : string) (yarnParams : Yarn.YarnParams) =
 
 let root = __SOURCE_DIRECTORY__
 let projectFile = "./src/Thoth.Json.fsproj"
-let testsFile = "./tests/Thoth.Tests.fsproj"
+let testsFile = "./tests/Tests.Thoth.Json.NetRuntime.fsproj"
 
 let gitOwner = "thoth-org"
 let repoName = "Thoth.Json"
@@ -71,11 +71,20 @@ module Logger =
     let errorfn str = Printf.kprintf (fun s -> use c = consoleColor ConsoleColor.Red in printfn "%s" s) str
 
 let run (cmd:string) dir args  =
+    // let ss = CreateProcess.interceptStream (console.OpenStandardOutput()) (StreamSpecification.Inherit)
     Command.RawCommand(cmd, Arguments.OfArgs args)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory dir
+    |> CreateProcess.redirectOutputIfNotRedirected
+    |> CreateProcess.withOutputEvents (printfn "%s") (eprintfn "%s")
+    // |> CreateProcess.withStandardOutput (StreamSpecification.UseStream (false,Console.OpenStandardOutput()))
+    // |> CreateProcess.withStandardError  (StreamSpecification.UseStream (false,Console.OpenStandardError()))
+    // |> CreateProcess.copyRedirectedProcessOutputsToStandardOutputs
     |> Proc.run
     |> ignore
+
+// let runDotNetTests args =
+//     run "test" "./tests" args
 
 
 let needsPublishing (versionRegex: Regex) (newVersion: string) projFile =
@@ -182,6 +191,17 @@ let dotnetRestore = BuildTask.create "DotnetRestore" [ clean.IfNeeded ] {
     DotNet.restore id testsFile
 }
 
+Target.create "Test" (fun _ ->
+    printfn "Tests starting"
+    eprintfn "Tests starting"
+    DotNet.exec (Path.getDirectory testsFile |> DotNet.Options.withWorkingDirectory) "run" (sprintf "-p %s" <| Path.GetFileName testsFile)
+    |> ignore<ProcessResult>
+    // runDotNetTests [| |]
+
+)
+// BuildTask.create "Test" [] {
+// }
+
 let mochaTest = BuildTask.create "MochaTest" [ clean.IfNeeded; yarnInstall; dotnetRestore ] {
     let projDir = testsFile |> Path.getDirectory
     let configFile = projDir </> "splitter.config.js"
@@ -243,6 +263,5 @@ let _release = BuildTask.create "Release" [ publish; publishDocs ] {
     |> GitHub.publishDraft
     |> Async.RunSynchronously
 }
-
 
 BuildTask.runOrList ()

@@ -926,16 +926,23 @@ module Decode =
     let unboxDecoder<'T> (decoder : BoxedDecoder) : Decoder<'T> =
         (decoder :?> DecoderCrate<'T>).UnboxedDecoder
 
-    let private autoObject (decoderInfos : (string * BoxedDecoder) []) (value : JsonValue) =
+    let private autoObject (decoderInfos : (string list * BoxedDecoder) []) (value : JsonValue) =
         if (not (Helpers.isObject value)) then
             ("", BadPrimitive ("an object", value)) |> Error
         else
             (decoderInfos, Ok [])
-            ||> Array.foldBack (fun (name : string, decoder : BoxedDecoder) acc ->
+            ||> Array.foldBack (fun (names : string list, decoder : BoxedDecoder) acc ->
                 match acc with
                 | Error _ -> acc // Todo path construction here???
                 | Ok result ->
-                    Helpers.getField name value
+                    names
+                    |> List.choose(fun name ->
+                        match Helpers.getField name value with
+                        | Json.Undefined -> None
+                        | x -> Some x
+                    )
+                    |> List.tryHead
+                    |> Option.defaultValue Json.Undefined
                     |> decoder.BoxedDecoder
                     |> Result.map (fun value ->
                         value::result
@@ -1274,8 +1281,8 @@ module Decode =
         let decoders =
             FSharpType.GetRecordFields(t, allowAccessToPrivateRepresentation = true)
             |> Array.map (fun fieldInfo ->
-                let name = Util.Casing.convert caseStrategy fieldInfo.Name
-                name, autoDecoder extra caseStrategy false fieldInfo.PropertyType
+                let names = Util.Casing.convert caseStrategy fieldInfo.Name
+                names, autoDecoder extra caseStrategy false fieldInfo.PropertyType
             )
 
         boxDecoder(fun value ->
@@ -1614,7 +1621,7 @@ If you can't use one of these types, please pass an extra decoder.
         type LowLevel =
             /// ATTENTION: Use this only when other arguments (isCamelCase, extra) don't change
             static member generateDecoderCached<'T> (t:System.Type, ?caseStrategy : CaseStrategy, ?extra: ExtraCoders): Decoder<'T> =
-                let caseStrategy = defaultArg caseStrategy PascalCase
+                let caseStrategy = defaultArg caseStrategy (PascalCase true)
 
                 let key =
                     t.FullName
@@ -1631,7 +1638,7 @@ If you can't use one of these types, please pass an extra decoder.
                     | Error er -> Error er
 
             static member generateDecoder<'T> (t: System.Type, ?caseStrategy : CaseStrategy, ?extra: ExtraCoders): Decoder<'T> =
-                let caseStrategy = defaultArg caseStrategy PascalCase
+                let caseStrategy = defaultArg caseStrategy (PascalCase true)
                 let decoderCrate = autoDecoder (makeExtra extra) caseStrategy false t
                 fun value ->
                     match decoderCrate.Decode(value) with

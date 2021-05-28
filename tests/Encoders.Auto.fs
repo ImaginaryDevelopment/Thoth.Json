@@ -58,7 +58,21 @@ let tests =
                         Name = "Maxime"
                     }
 
-                let actual = Encode.Auto.toString(0, value, CamelCase)
+                let actual = Encode.Auto.toString(0, value, CamelCase false)
+                Expect.equal actual expected ""
+
+            testCase "forceCamelCase loose works" <| fun _ ->
+                let expected =
+                    """{"email":"mail@test.com","followers":33,"id":0,"name":"Maxime"}"""
+                let value : UserCaseSensitive =
+                    {
+                        Email = "mail@test.com"
+                        followers = 33
+                        Id = 0
+                        Name = "Maxime"
+                    }
+
+                let actual = Encode.Auto.toString(0, value, CamelCase true)
                 Expect.equal actual expected ""
 
             testCase "Encode.Auto.generateEncoder works" <| fun _ ->
@@ -168,13 +182,25 @@ let tests =
             testCase "Encode.Auto.toString works with records with private constructors" <| fun _ ->
                 let expected = """{"foo1":5,"foo2":7.8}"""
                 let x = { Foo1 = 5; Foo2 = 7.8 }: RecordWithPrivateConstructor
-                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase)
+                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase false)
+                Expect.equal actual expected ""
+
+            testCase "Encode.Auto.toString works with loose casing for records with private constructors" <| fun _ ->
+                let expected = """{"foo1":5,"foo2":7.8}"""
+                let x = { Foo1 = 5; Foo2 = 7.8 }: RecordWithPrivateConstructor
+                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase true)
                 Expect.equal actual expected ""
 
             testCase "Encode.Auto.toString works with unions with private constructors" <| fun _ ->
                 let expected = """["Baz",["Bar","foo"]]"""
                 let x = [Baz; Bar "foo"]
-                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase)
+                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase false)
+                Expect.equal actual expected ""
+
+            testCase "Encode.Auto.toString works with loose casing for unions with private constructors" <| fun _ ->
+                let expected = """["Baz",["Bar","foo"]]"""
+                let x = [Baz; Bar "foo"]
+                let actual = Encode.Auto.toString(0, x, caseStrategy=CamelCase true)
                 Expect.equal actual expected ""
 
             testCase "Encode.Auto.toString works with strange types if they are None" <| fun _ ->
@@ -246,26 +272,26 @@ let tests =
                 let actual = Encode.Auto.toString(0, DayOfWeek.Tuesday)
                 Expect.equal actual expected ""
 
-            testCase "Encode.Auto.toString generate `null` if skipNullField is true and the optional field value of type classes is None" <| fun _ ->
+            testCase "Encode.Auto.toString generates `null` if skipNullField is true and the optional field value of type classes is None" <| fun _ ->
                 let value =
                     {
                         MaybeClass = None
                         Must = "must value"
                     } : RecordWithOptionalClass
 
-                let actual = Encode.Auto.toString(0, value, caseStrategy = CamelCase, skipNullField = false)
+                let actual = Encode.Auto.toString(0, value, caseStrategy = CamelCase false, skipNullField = false)
                 let expected =
                     """{"maybeClass":null,"must":"must value"}"""
                 Expect.equal actual expected ""
 
-            testCase "Encode.Auto.toString doesn't generate the optional field of type classe if it's value is None" <| fun _ ->
+            testCase "Encode.Auto.toString doesn't generate the optional field of type classes if its value is None" <| fun _ ->
                 let value =
                     {
                         MaybeClass = None
                         Must = "must value"
                     } : RecordWithOptionalClass
 
-                let actual = Encode.Auto.toString(0, value, caseStrategy = CamelCase)
+                let actual = Encode.Auto.toString(0, value, caseStrategy = CamelCase false)
                 let expected =
                     """{"must":"must value"}"""
                 Expect.equal actual expected ""
@@ -274,7 +300,7 @@ let tests =
                 let expected = "Cannot generate auto encoder for Tests.Types.BaseClass. Please pass an extra coder."
                 let errorMsg =
                     try
-                        let encoder = Encode.Auto.generateEncoder<RecordWithRequiredClass>(caseStrategy = CamelCase)
+                        let encoder = Encode.Auto.generateEncoder<RecordWithRequiredClass>(caseStrategy = CamelCase false)
                         ""
                     with ex ->
                         ex.Message

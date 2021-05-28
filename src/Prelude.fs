@@ -64,7 +64,7 @@ module Helpers =
             | None ->
                 Json.Undefined
         | _ ->
-            failwith "Given JSON values is not a number"
+            failwith "Given JSON value is not an object"
 
     let isArray(value: JsonValue): bool =
         match value with

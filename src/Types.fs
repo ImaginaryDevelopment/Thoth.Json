@@ -1,8 +1,8 @@
 namespace Thoth.Json
 
 type CaseStrategy =
-    | PascalCase
-    | CamelCase
+    | PascalCase of decodingAllowsCamel:bool
+    | CamelCase of decodingAllowsPascal:bool
     | SnakeCase
 
 type ErrorReason =
@@ -136,9 +136,11 @@ module Util =
         let lowerFirst (str : string) = str.[..0].ToLowerInvariant() + str.[1..]
         let convert caseStrategy fieldName =
             match caseStrategy with
-            | CamelCase -> lowerFirst fieldName
-            | SnakeCase -> Regex.Replace(lowerFirst fieldName, "[A-Z]","_$0").ToLowerInvariant()
-            | PascalCase -> fieldName
+            | CamelCase false -> [lowerFirst fieldName]
+            | CamelCase true -> [lowerFirst fieldName;fieldName]
+            | SnakeCase -> [Regex.Replace(lowerFirst fieldName, "[A-Z]","_$0").ToLowerInvariant()]
+            | PascalCase false -> [fieldName]
+            | PascalCase true -> [fieldName;lowerFirst fieldName]
 
     #if !NETFRAMEWORK && !THOTH_JSON_FABLE && !(THOTH_JSON && FABLE_COMPILER)
     let (|StringEnum|_|) (typ : System.Type) =

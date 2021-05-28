@@ -436,7 +436,7 @@ module Encode =
         let setters =
             FSharpType.GetRecordFields(t, allowAccessToPrivateRepresentation = true)
             |> Array.map (fun propertyInfo ->
-                let targetKey = Util.Casing.convert caseStrategy propertyInfo.Name
+                let targetKey = Util.Casing.convert caseStrategy propertyInfo.Name |> List.head // encoding doesn't need other case possibilities
                 let encoder : BoxedEncoder = autoEncoder extra caseStrategy skipNullField propertyInfo.PropertyType
 
                 fun (source : obj) (res : Map<string, Json>) ->
@@ -796,7 +796,7 @@ If you can't use one of these types, please pass add a new extra coder.
         type LowLevel =
             /// ATTENTION: Use this only when other arguments (isCamelCase, extra) don't change
             static member generateEncoderCached<'T> (t: System.Type, ?caseStrategy : CaseStrategy, ?extra: ExtraCoders, ?skipNullField: bool): Encoder<'T> =
-                let caseStrategy = defaultArg caseStrategy PascalCase
+                let caseStrategy = defaultArg caseStrategy (PascalCase false)
                 let skipNullField = defaultArg skipNullField true
 
                 let key =
@@ -829,7 +829,7 @@ If you can't use one of these types, please pass add a new extra coder.
 
         #if FABLE_COMPILER
         static member generateEncoder<'T>(?caseStrategy : CaseStrategy, ?extra: ExtraCoders, ?skipNullField: bool, [<Inject>] ?resolver : ITypeResolver<'T>): Encoder<'T> =
-            let caseStrategy = defaultArg caseStrategy PascalCase
+            let caseStrategy = defaultArg caseStrategy (PascalCase false)
             let skipNullField = defaultArg skipNullField true
             let t = resolver.Value.ResolveType()
             let encoderCrate = autoEncoder (makeExtra extra) caseStrategy skipNullField t
@@ -839,7 +839,7 @@ If you can't use one of these types, please pass add a new extra coder.
 
         #if !FABLE_COMPILER
         static member generateEncoder<'T>(?caseStrategy : CaseStrategy, ?extra: ExtraCoders, ?skipNullField: bool): Encoder<'T> =
-            let caseStrategy = defaultArg caseStrategy PascalCase
+            let caseStrategy = defaultArg caseStrategy (PascalCase false)
             let skipNullField = defaultArg skipNullField true
             let encoderCrate = autoEncoder (makeExtra extra) caseStrategy skipNullField typeof<'T>
             fun (value: 'T) ->

@@ -107,6 +107,22 @@ let quicktests =
 
 [<EntryPoint>]
 let main args =
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    eprintfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
+    printfn "Starting tests"
     let allTests =
         testList "All" [
 //            Decoders.Manual.tests
@@ -118,8 +134,14 @@ let main args =
             quicktests
         ]
 
-    #if FABLE_COMPILER
-    Mocha.runTests allTests
-    #else
-    runTestsWithArgs defaultConfig args allTests
-    #endif
+
+    let result =
+        #if FABLE_COMPILER
+        printfn "Fable Tests"
+        Mocha.runTests allTests
+        #else
+        printfn "Net Tests"
+        runTestsWithArgs defaultConfig args allTests
+        #endif
+    printfn "Tests finished"
+    result
