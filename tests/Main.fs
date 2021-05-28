@@ -1,12 +1,11 @@
 module Tests.Main
 
-#if FABLE_COMPILER
 open Thoth.Json
+#if FABLE_COMPILER
 open Fable.Mocha
 #endif
 
 #if !FABLE_COMPILER
-open Thoth.Json
 open Expecto
 #endif
 
@@ -38,9 +37,32 @@ type SeveralArgumentDus3 =
 //    testDuEncoder2
 //        (function SeveralArgs3 (args1, args2) -> Some (args1, args2) | _ -> None  )
 //        (SeveralArgs3 (1, { Name = "maxime"; Age = 11 }))
-
+[<Tests>]
 let quicktests =
     testList "QuickTest" [
+        testList "Encoding" [
+          test "OptionSomeJson" {
+                                // Check Some case of primitive type
+                let realOptionSome : Option<_> = Some "maxime"
+                let fakeOptionSome : Fake.FakeOption<_> = Fake.FakeOption.Some "maxime"
+
+                let realOptionSomeJson = Encode.Auto.toString(0, realOptionSome)
+                let fakeOptionSomeJson = Encode.Auto.toString(0, fakeOptionSome)
+
+                Expect.equal realOptionSomeJson fakeOptionSomeJson ""
+                printfn "Finished option some test"
+          }
+          test "OptionNoneJson" {
+                // Check None case
+                let realOptionNone : Option<_> = None
+                let fakeOptionNone : Fake.FakeOption<_> = Fake.FakeOption.None
+
+                let realOptionNoneJson = Encode.Auto.toString(0, realOptionNone, skipNullField = false)
+                let fakeOptionNoneJson = Encode.Auto.toString(0, fakeOptionNone, skipNullField = false)
+
+                Expect.equal realOptionNoneJson fakeOptionNoneJson ""
+          }
+        ]
         testList "Fake category" [
             testCase "QuickTest: #1" <| fun _ ->
                 let value = SeveralArgs (10, {| Name = "maxime"; Age = 28 |})
@@ -75,23 +97,8 @@ let quicktests =
 //                let json = Encode.Auto.toString(4, value)
 //                printfn "%A" json
 
-                                // Check Some case of primitive type
-                let realOptionSome : Option<_> = Some "maxime"
-                let fakeOptionSome : Fake.FakeOption<_> = Fake.FakeOption.Some "maxime"
 
-                let realOptionSomeJson = Encode.Auto.toString(0, realOptionSome)
-                let fakeOptionSomeJson = Encode.Auto.toString(0, fakeOptionSome)
 
-                Expect.equal realOptionSomeJson fakeOptionSomeJson ""
-
-                // Check None case
-                let realOptionNone : Option<_> = None
-                let fakeOptionNone : Fake.FakeOption<_> = Fake.FakeOption.None
-
-                let realOptionNoneJson = Encode.Auto.toString(0, realOptionNone, skipNullField = false)
-                let fakeOptionNoneJson = Encode.Auto.toString(0, fakeOptionNone, skipNullField = false)
-
-                Expect.equal realOptionNoneJson fakeOptionNoneJson ""
 
                 // Check Some case of complex type
                 let realOptionSomeComplex : Option<_> = Some {| Firstname = "maxime"; Age = 28 |}
@@ -121,5 +128,6 @@ let main args =
     #if FABLE_COMPILER
     Mocha.runTests allTests
     #else
-    runTestsWithArgs defaultConfig args allTests
+    // runTestsWithArgs defaultConfig args allTests
+    runTestsInAssemblyWithCLIArgs Seq.empty args
     #endif

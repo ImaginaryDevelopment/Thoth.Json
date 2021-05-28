@@ -35,7 +35,7 @@ let inline yarnWorkDir (ws : string) (yarnParams : Yarn.YarnParams) =
 
 let root = __SOURCE_DIRECTORY__
 let projectFile = "./src/Thoth.Json.fsproj"
-let testsFile = "./tests/Thoth.Tests.fsproj"
+let testsFile = "./tests/Tests.Thoth.Json.NetRuntime.fsproj"
 
 let gitOwner = "thoth-org"
 let repoName = "Thoth.Json"
@@ -192,6 +192,13 @@ let mochaTest = BuildTask.create "MochaTest" [ clean.IfNeeded; yarnInstall; dotn
     let projDirOutput = projDir </> "bin"
     Yarn.exec ("run mocha " + projDirOutput) id
 }
+
+Target.create "Test" (fun _ ->
+    printfn "Tests starting"
+    eprintfn "Tests starting"
+    DotNet.exec (Path.getDirectory testsFile |> DotNet.Options.withWorkingDirectory) "run" (sprintf "-p %s" <| Path.GetFileName testsFile)
+    |> ignore<ProcessResult>
+)
 
 let publish = BuildTask.create "Publish" [ clean; dotnetRestore ] {
     let version = getLastVersion()

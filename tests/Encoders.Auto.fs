@@ -22,6 +22,7 @@ type RecordWithPrivateConstructor = private { Foo1: int; Foo2: float }
 
 type UnionWithPrivateConstructor = private Bar of string | Baz
 
+[<Tests>]
 let tests =
     testList "Thoth.Json.Encode" [
         testList "Encode.Auto" [
@@ -182,8 +183,8 @@ let tests =
                     """{"Id":0}"""
 
                 let value =
-                    { Id = 0
-                      Thread = None }
+                    {   Id = 0
+                        Thread = None }
 
                 let actual = Encode.Auto.toString(0, value)
                 Expect.equal actual expected ""
@@ -193,8 +194,8 @@ let tests =
                     """{"Id":0}"""
 
                 let value =
-                    { Id = 0
-                      Interface = None }
+                    {   Id = 0
+                        Interface = None }
 
                 let actual = Encode.Auto.toString(0, value)
                 Expect.equal actual expected ""
